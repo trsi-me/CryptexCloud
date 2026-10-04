@@ -1,0 +1,5 @@
+Flask==2.2.5
+boto3==1.28.0
+cryptography==41.0.0
+python-dotenv==1.0.0
+Werkzeug==2.2.3

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptexCloud - لوحة التحكم</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="dashboard-page">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>CryptexCloud</h2>
+            <p>نظام النسخ الاحتياطي الآمن</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link active">
+                <i class="fas fa-chart-pie nav-icon"></i>
+                لوحة التحكم
+            </a>
+            <a href="/profile" class="nav-link">
+                <i class="fas fa-user nav-icon"></i>
+                الملف الشخصي
+            </a>
+            <a href="/settings" class="nav-link">
+                <i class="fas fa-cog nav-icon"></i>
+                الإعدادات
+            </a>
+            <a href="/logs" class="nav-link">
+                <i class="fas fa-list nav-icon"></i>
+                السجل
+            </a>
+            <a href="/logout" class="nav-link logout-link">
+                <i class="fas fa-sign-out-alt nav-icon"></i>
+                تسجيل الخروج
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="security-reminder">
+                <i class="fas fa-shield-alt reminder-icon"></i>
+                <p>احفظ كلمة المرور في مكان آمن</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="main-header">
+            <h1 id="pageTitle">لوحة التحكم</h1>
+            <div class="user-info">
+                <span>مرحباً، <strong id="username">{{ session.username }}</strong></span>
+            </div>
+        </header>
+
+        <!-- قسم لوحة التحكم -->
+        <div id="dashboard" class="content-section active">
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-folder upload-icon"></i>
+                    <h3>اسحب الملفات هنا أو انقر للاختيار</h3>
+                    <p><i class="fas fa-lock"></i> يتم تشفير الملفات في المتصفح قبل الرفع</p>
+                    <label for="fileInput" class="hidden">اختيار الملفات</label>
+                    <input type="file" id="fileInput" multiple class="hidden" title="اختيار الملفات">
+                    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-upload"></i> اختيار ملفات
+                    </button>
+                </div>
+
+                <div class="master-password-section hidden" id="masterPasswordSection">
+                    <h4><i class="fas fa-lock"></i> كلمة المرور الرئيسية</h4>
+                    <div class="form-group">
+                        <input type="password" id="masterPassword" placeholder="أدخل كلمة المرور الرئيسية" required>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rememberPassword">
+                            تذكر في هذه الجلسة فقط
+                        </label>
+                    </div>
+                    <div class="password-actions">
+                        <button class="btn btn-primary" onclick="startEncryption()"><i class="fas fa-play"></i> بدء
+                            التشفير والرفع</button>
+                        <button class="btn btn-secondary" onclick="cancelEncryption()"><i class="fas fa-times"></i>
+                            إلغاء</button>
+                    </div>
+                </div>
+
+                <div class="progress-section hidden" id="progressSection">
+                    <div class="progress-item">
+                        <label><i class="fas fa-lock"></i> التشفير: <i
+                                class="fas fa-spinner fa-spin encrypt-icon"></i></label>
+                        <div class="progress-bar progress-bar-enhanced">
+                            <div class="progress-fill" id="encryptionProgress"></div>
+                        </div>
+                        <span id="encryptionStatus">في الانتظار...</span>
+                    </div>
+                    <div class="progress-item">
+                        <label><i class="fas fa-upload"></i> الرفع: <i
+                                class="fas fa-spinner fa-spin upload-icon"></i></label>
+                        <div class="progress-bar progress-bar-enhanced">
+                            <div class="progress-fill" id="uploadProgress"></div>
+                        </div>
+                        <span id="uploadStatus">في الانتظار...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="files-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-folder"></i> ملفاتك</h3>
+                    <button class="btn btn-secondary" onclick="loadFiles()"><i class="fas fa-refresh"></i>
+                        تحديث</button>
+                </div>
+
+                <div class="files-table-container">
+                    <table class="files-table" id="filesTable">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-file"></i> اسم الملف</th>
+                                <th><i class="fas fa-folder-open"></i> الحجم</th>
+                                <th><i class="fas fa-clock"></i> تاريخ الرفع</th>
+                                <th><i class="fas fa-bars"></i> الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filesTableBody">
+                            <tr>
+                                <td colspan="4" class="loading">جاري تحميل الملفات...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم السجل -->
+        <div id="logs" class="content-section">
+            <div class="section-header">
+                <h3><span class="icon-logs"></span> سجل العمليات</h3>
+                <button class="btn btn-secondary" onclick="loadLogs()"><span class="icon-refresh"></span> تحديث</button>
+            </div>
+
+            <div class="logs-container" id="logsContainer">
+                <div class="loading">جاري تحميل السجل...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة حوار التأكيد -->
+    <div id="confirmDialog" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="confirmTitle">تأكيد العملية</h3>
+            <p id="confirmMessage">هل أنت متأكد من تنفيذ هذه العملية؟</p>
+            <div class="modal-actions">
+                <button class="btn btn-danger" id="confirmYes">نعم</button>
+                <button class="btn btn-secondary" id="confirmNo">لا</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- رسائل التنبيه -->
+    <div id="message" class="message"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // متغيرات عامة
+        let selectedFiles = [];
+        let masterPassword = '';
+        let rememberPassword = false;
+        let currentSection = 'dashboard';
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function () {
+            loadFiles();
+            setupFileUpload();
+        });
+
+        // إعداد رفع الملفات
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            // سحب وإفلات
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            // اختيار ملفات
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        // معالجة الملفات المختارة
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            if (selectedFiles.length > 0) {
+                showMasterPasswordSection();
+            }
+        }
+
+        // عرض قسم كلمة المرور الرئيسية
+        function showMasterPasswordSection() {
+            document.getElementById('masterPasswordSection').classList.remove('hidden');
+            document.getElementById('masterPassword').focus();
+        }
+
+        // بدء التشفير والرفع
+        async function startEncryption() {
+            const password = document.getElementById('masterPassword').value;
+            const remember = document.getElementById('rememberPassword').checked;
+
+            if (!password) {
+                showAnimatedMessage('<i class="fas fa-exclamation-triangle"></i> يرجى إدخال كلمة المرور الرئيسية', 'error');
+                return;
+            }
+
+            masterPassword = password;
+            rememberPassword = remember;
+
+            // إخفاء قسم كلمة المرور وإظهار شريط التقدم
+            document.getElementById('masterPasswordSection').classList.add('hidden');
+            document.getElementById('progressSection').classList.remove('hidden');
+            document.getElementById('progressSection').classList.add('fade-in-up');
+
+            // بدء انيميشن رموز التشفير
+            createCodeRain();
+
+            // تشفير ورفع كل ملف
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const fileRow = animateFileUpload(file.name);
+
+                try {
+                    // تحديث شريط التقدم - بدء التشفير
+                    updateProgress('encryption', 0, '<i class="fas fa-lock"></i> جاري التشفير...');
+                    animateProgress(document.getElementById('encryptionProgress'), 50, 1000);
+
+                    // تشفير الملف
+                    const encryptedResult = await cryptex.encryptFile(file, masterPassword);
+
+                    // تحديث شريط التقدم - انتهاء التشفير
+                    updateProgress('encryption', 100, '<span class="icon-success"></span> تم التشفير');
+                    animateProgress(document.getElementById('encryptionProgress'), 100, 500);
+
+                    // تحديث شريط التقدم - بدء الرفع
+                    updateProgress('upload', 0, '<span class="icon-upload"></span> جاري الرفع...');
+                    animateProgress(document.getElementById('uploadProgress'), 50, 1000);
+
+                    // رفع الملف المشفّر
+                    const uploadResult = await cryptex.uploadEncryptedFile(file, encryptedResult);
+
+                    // تحديث شريط التقدم - انتهاء الرفع
+                    updateProgress('upload', 100, '<span class="icon-success"></span> تم الرفع بنجاح');
+                    animateProgress(document.getElementById('uploadProgress'), 100, 500);
+
+                    // تحديث حالة الملف
+                    if (fileRow) {
+                        fileRow.dataset.fileId = uploadResult.file_id;
+                        fileRow.dataset.fileName = file.name;
+                        updateFileStatus(fileRow, 'success', formatFileSize(file.size));
+                    }
+
+                    showAnimatedMessage(`<span class="icon-success"></span> تم رفع الملف ${file.name} بنجاح`, 'success');
+
+                } catch (error) {
+                    // تحديث شريط التقدم - فشل
+                    updateProgress('encryption', 0, '<span class="icon-error"></span> فشل في التشفير');
+                    updateProgress('upload', 0, '<span class="icon-error"></span> فشل في الرفع');
+
+                    // تحديث حالة الملف
+                    if (fileRow) {
+                        updateFileStatus(fileRow, 'error', 'فشل في الرفع');
+                    }
+
+                    showAnimatedMessage(`<span class="icon-error"></span> فشل في رفع الملف ${file.name}: ${error.message}`, 'error');
+                }
+            }
+
+            // إيقاف انيميشن رموز التشفير
+            setTimeout(() => {
+                removeCodeRain();
+            }, 2000);
+
+            // إعادة تعيين النموذج
+            setTimeout(() => {
+                resetUploadForm();
+                loadFiles();
+            }, 3000);
+        }
+
+        // إلغاء التشفير
+        function cancelEncryption() {
+            selectedFiles = [];
+            removeCodeRain();
+            resetUploadForm();
+            showAnimatedMessage('<span class="icon-cancel"></span> تم إلغاء عملية الرفع', 'info');
+        }
+
+        // إعادة تعيين نموذج الرفع
+        function resetUploadForm() {
+            selectedFiles = [];
+            document.getElementById('fileInput').value = '';
+            document.getElementById('masterPassword').value = '';
+            document.getElementById('rememberPassword').checked = false;
+            document.getElementById('masterPasswordSection').classList.add('hidden');
+            document.getElementById('progressSection').classList.add('hidden');
+            updateProgress('encryption', 0, 'في الانتظار...');
+            updateProgress('upload', 0, 'في الانتظار...');
+        }
+
+        // تحديث شريط التقدم
+        function updateProgress(type, percent, status) {
+            const progressBar = document.getElementById(type + 'Progress');
+            const statusText = document.getElementById(type + 'Status');
+
+            if (progressBar && statusText) {
+                progressBar.style.width = percent + '%';
+                statusText.textContent = status;
+            }
+        }
+
+        // تحميل الملفات
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/files');
+                const result = await response.json();
+
+                if (result.success) {
+                    displayFiles(result.files);
+                } else {
+                    showAnimatedMessage('<span class="icon-error"></span> فشل في تحميل الملفات', 'error');
+                }
+            } catch (error) {
+                showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+            }
+        }
+
+        // عرض الملفات
+        function displayFiles(files) {
+            const tbody = document.getElementById('filesTableBody');
+
+            if (files.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="no-files"><span class="icon-folder"></span> لا توجد ملفات</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = files.map((file, index) => `
+                <tr class="file-item fade-in-up" style="animation-delay: ${index * 0.1}s">
+                    <td class="filename"><span class="icon-document"></span> ${file.original_filename}</td>
+                    <td>${formatFileSize(file.size)}</td>
+                    <td>${formatDate(file.uploaded_at)}</td>
+                    <td class="actions">
+                        <button class="btn btn-sm btn-primary" onclick="downloadFile(${file.id})"><span class="icon-download"></span> تحميل</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteFile(${file.id}, '${file.original_filename}')"><span class="icon-delete"></span> حذف</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // تحميل ملف
+        async function downloadFile(fileId) {
+            try {
+                // التحقق من وجود كلمة المرور
+                let password = cryptex.masterPassword || cryptex.getStoredMasterPassword();
+
+                if (!password) {
+                    // طلب كلمة المرور من المستخدم
+                    password = prompt('أدخل كلمة المرور الرئيسية لفك تشفير الملف:');
+                    if (!password) {
+                        showAnimatedMessage('<span class="icon-error"></span> تم إلغاء العملية', 'error');
+                        return;
+                    }
+                }
+
+                showAnimatedMessage('<span class="icon-loading"></span> جاري تحميل الملف...', 'info');
+
+                const response = await fetch(`/api/download/${fileId}`);
+
+                if (!response.ok) {
+                    throw new Error('فشل في تحميل الملف');
+                }
+
+                // الحصول على البيانات الوصفية من الرؤوس
+                let metadata;
+                try {
+                    const metadataHeader = response.headers.get('X-Metadata');
+                    if (!metadataHeader) {
+                        throw new Error('البيانات الوصفية غير موجودة في الاستجابة');
+                    }
+                    metadata = JSON.parse(metadataHeader);
+                } catch (e) {
+                    throw new Error('فشل في قراءة البيانات الوصفية: ' + e.message);
+                }
+
+                const originalFilename = response.headers.get('X-Original-Filename') || 'file';
+                const fileSize = parseInt(response.headers.get('X-File-Size') || '0');
+                const mimeType = response.headers.get('X-Mime-Type') || 'application/octet-stream';
+
+                // تحميل الملف المشفّر
+                const encryptedData = await response.arrayBuffer();
+
+                if (!encryptedData || encryptedData.byteLength === 0) {
+                    throw new Error('الملف المشفّر فارغ أو تالف');
+                }
+
+                showAnimatedMessage('<span class="icon-decrypt"></span> جاري فك التشفير...', 'info');
+
+                // فك التشفير مع كلمة المرور
+                const decryptedData = await cryptex.decryptFile(encryptedData, metadata, password);
+
+                // تحميل الملف المفكوك
+                const blob = new Blob([decryptedData], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = originalFilename;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showAnimatedMessage('<span class="icon-success"></span> تم تحميل الملف بنجاح', 'success');
+            } catch (error) {
+                console.error('خطأ في تحميل الملف:', error);
+                showAnimatedMessage('<span class="icon-error"></span> فشل في تحميل الملف: ' + error.message, 'error');
+            }
+        }
+
+        // حذف ملف
+        function deleteFile(fileId, filename) {
+            showConfirmDialog(
+                '<span class="icon-delete"></span> حذف الملف',
+                `هل أنت متأكد من حذف الملف "${filename}"؟ لا يمكن التراجع عن هذه العملية.`,
+                async () => {
+                    try {
+                        showAnimatedMessage('<span class="icon-loading"></span> جاري حذف الملف...', 'info');
+
+                        const response = await fetch(`/api/file/${fileId}`, {
+                            method: 'DELETE'
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showAnimatedMessage('<span class="icon-success"></span> تم حذف الملف بنجاح', 'success');
+                            loadFiles();
+                        } else {
+                            showAnimatedMessage('<span class="icon-error"></span> ' + (result.error || 'فشل في حذف الملف'), 'error');
+                        }
+                    } catch (error) {
+                        showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+                    }
+                }
+            );
+        }
+
+        // تحميل السجل
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const result = await response.json();
+
+                if (result.success) {
+                    displayLogs(result.logs);
+                } else {
+                    showAnimatedMessage('<span class="icon-error"></span> فشل في تحميل السجل', 'error');
+                }
+            } catch (error) {
+                showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+            }
+        }
+
+        // عرض السجل
+        function displayLogs(logs) {
+            const container = document.getElementById('logsContainer');
+
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="no-logs"><span class="icon-logs"></span> لا توجد سجلات</div>';
+                return;
+            }
+
+            container.innerHTML = logs.map((log, index) => `
+                <div class="log-item ${log.status} fade-in-up" style="animation-delay: ${index * 0.1}s">
+                    <div class="log-header">
+                        <span class="log-action">${getActionIcon(log.action)} ${getActionText(log.action)}</span>
+                        <span class="log-time">${formatDate(log.timestamp)}</span>
+                        <span class="log-status ${log.status}">${getStatusIcon(log.status)} ${getStatusText(log.status)}</span>
+                    </div>
+                    ${log.message ? `<div class="log-message">${log.message}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // تبديل الأقسام
+        function showSection(section) {
+            // تحديث الروابط
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // إخفاء جميع الأقسام
+            document.querySelectorAll('.content-section').forEach(div => {
+                div.classList.remove('active');
+            });
+
+            // إظهار القسم المحدد
+            document.getElementById(section).classList.add('active');
+            currentSection = section;
+
+            // تحديث العنوان
+            const titles = {
+                'dashboard': '<span class="icon-dashboard"></span> لوحة التحكم',
+                'logs': '<span class="icon-logs"></span> السجل'
+            };
+            document.getElementById('pageTitle').innerHTML = titles[section];
+
+            // تحميل البيانات حسب القسم
+            if (section === 'logs') {
+                loadLogs();
+            }
+        }
+
+        // نافذة حوار التأكيد
+        function showConfirmDialog(title, message, onConfirm) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmDialog').classList.remove('hidden');
+
+            document.getElementById('confirmYes').onclick = () => {
+                document.getElementById('confirmDialog').classList.add('hidden');
+                onConfirm();
+            };
+
+            document.getElementById('confirmNo').onclick = () => {
+                document.getElementById('confirmDialog').classList.add('hidden');
+            };
+        }
+
+        // عرض الرسائل
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            if (messageDiv) {
+                messageDiv.textContent = text;
+                messageDiv.className = `message ${type}`;
+                messageDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // دوال مساعدة
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 بايت';
+            const k = 1024;
+            const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US') + ' ' + date.toLocaleTimeString('en-US');
+        }
+
+        function getActionText(action) {
+            const actions = {
+                'register': 'إنشاء حساب',
+                'login': 'تسجيل دخول',
+                'logout': 'تسجيل خروج',
+                'upload': 'رفع ملف',
+                'download': 'تحميل ملف',
+                'delete': 'حذف ملف'
+            };
+            return actions[action] || action;
+        }
+
+        function getStatusText(status) {
+            const statuses = {
+                'success': 'نجح',
+                'error': 'فشل',
+                'warning': 'تحذير'
+            };
+            return statuses[status] || status;
+        }
+
+        function getActionIcon(action) {
+            const icons = {
+                'register': '<span class="icon-register"></span>',
+                'login': '<span class="icon-login"></span>',
+                'logout': '<span class="icon-logout"></span>',
+                'upload': '<span class="icon-upload"></span>',
+                'download': '<span class="icon-download"></span>',
+                'delete': '<span class="icon-delete"></span>'
+            };
+            return icons[action] || '<span class="icon-document"></span>';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'success': '<span class="icon-success"></span>',
+                'error': '<span class="icon-error"></span>',
+                'warning': '<span class="icon-warning"></span>'
+            };
+            return icons[status] || '<span class="icon-info"></span>';
+        }
+    </script>
+</body>
+
+</html>

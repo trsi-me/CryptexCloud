@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptexCloud - السجل</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="dashboard-page">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>CryptexCloud</h2>
+            <p>نظام النسخ الاحتياطي الآمن</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link">
+                <i class="fas fa-chart-pie nav-icon"></i>
+                لوحة التحكم
+            </a>
+            <a href="/profile" class="nav-link">
+                <i class="fas fa-user nav-icon"></i>
+                الملف الشخصي
+            </a>
+            <a href="/settings" class="nav-link">
+                <i class="fas fa-cog nav-icon"></i>
+                الإعدادات
+            </a>
+            <a href="/logs" class="nav-link active">
+                <i class="fas fa-list nav-icon"></i>
+                السجل
+            </a>
+            <a href="/logout" class="nav-link logout-link">
+                <i class="fas fa-sign-out-alt nav-icon"></i>
+                تسجيل الخروج
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="security-reminder">
+                <i class="fas fa-shield-alt reminder-icon"></i>
+                <p>احفظ كلمة المرور في مكان آمن</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="main-header">
+            <h1><i class="fas fa-list"></i> سجل العمليات</h1>
+            <div class="user-info">
+                <span>مرحباً، <strong id="username">{{ session.username }}</strong></span>
+            </div>
+        </header>
+
+        <div class="content-section active">
+            <div class="logs-section">
+                <div class="logs-filters">
+                    <div class="filter-group">
+                        <label for="actionFilter">نوع العملية:</label>
+                        <select id="actionFilter">
+                            <option value="">جميع العمليات</option>
+                            <option value="register">تسجيل</option>
+                            <option value="login">دخول</option>
+                            <option value="logout">خروج</option>
+                            <option value="upload">رفع</option>
+                            <option value="download">تحميل</option>
+                            <option value="delete">حذف</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter">الحالة:</label>
+                        <select id="statusFilter">
+                            <option value="">جميع الحالات</option>
+                            <option value="success">نجح</option>
+                            <option value="error">فشل</option>
+                            <option value="warning">تحذير</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateFilter">التاريخ:</label>
+                        <select id="dateFilter">
+                            <option value="">جميع التواريخ</option>
+                            <option value="today">اليوم</option>
+                            <option value="week">هذا الأسبوع</option>
+                            <option value="month">هذا الشهر</option>
+                            <option value="year">هذه السنة</option>
+                        </select>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> تطبيق الفلاتر
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearFilters()">
+                            <i class="fas fa-refresh"></i> مسح الفلاتر
+                        </button>
+                    </div>
+                </div>
+
+                <div class="logs-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-check stat-icon"></i>
+                        <div class="stat-info">
+                            <div class="stat-number" id="successCount">0</div>
+                            <div class="stat-label">عمليات ناجحة</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-times stat-icon"></i>
+                        <div class="stat-info">
+                            <div class="stat-number" id="errorCount">0</div>
+                            <div class="stat-label">عمليات فاشلة</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-upload stat-icon"></i>
+                        <div class="stat-info">
+                            <div class="stat-number" id="uploadCount">0</div>
+                            <div class="stat-label">ملفات مرفوعة</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-download stat-icon"></i>
+                        <div class="stat-info">
+                            <div class="stat-number" id="downloadCount">0</div>
+                            <div class="stat-label">ملفات محملة</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="logs-container" id="logsContainer">
+                    <div class="loading"><i class="fas fa-spinner fa-spin"></i> جاري تحميل السجل...</div>
+                </div>
+
+                <div class="logs-pagination">
+                    <button class="btn btn-secondary" id="prevPage" onclick="changePage(-1)">
+                        <i class="fas fa-step-backward"></i> السابق
+                    </button>
+                    <span id="pageInfo">الصفحة 1 من 1</span>
+                    <button class="btn btn-secondary" id="nextPage" onclick="changePage(1)">
+                        <i class="fas fa-step-forward"></i> التالي
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- رسائل التنبيه -->
+    <div id="message" class="message"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentFilters = {};
+
+        // تحميل السجل
+        document.addEventListener('DOMContentLoaded', function () {
+            loadLogs();
+        });
+
+        // تحميل السجل
+        async function loadLogs(page = 1, filters = {}) {
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    ...filters
+                });
+
+                const response = await fetch(`/api/logs?${params}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayLogs(result.logs);
+                    updatePagination(result.pagination);
+                    updateStats(result.stats);
+                } else {
+                    showAnimatedMessage('<i class="fas fa-times"></i> فشل في تحميل السجل', 'error');
+                }
+            } catch (error) {
+                showAnimatedMessage('<i class="fas fa-times"></i> حدث خطأ في الاتصال', 'error');
+            }
+        }
+
+        // عرض السجل
+        function displayLogs(logs) {
+            const container = document.getElementById('logsContainer');
+
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="no-logs"><i class="fas fa-list"></i> لا توجد سجلات</div>';
+                return;
+            }
+
+            container.innerHTML = logs.map((log, index) => `
+                <div class="log-item ${log.status} fade-in-up" style="animation-delay: ${index * 0.1}s">
+                    <div class="log-header">
+                        <span class="log-action">${getActionIcon(log.action)} ${getActionText(log.action)}</span>
+                        <span class="log-time">${formatDate(log.timestamp)}</span>
+                        <span class="log-status ${log.status}">${getStatusIcon(log.status)} ${getStatusText(log.status)}</span>
+                    </div>
+                    ${log.message ? `<div class="log-message">${log.message}</div>` : ''}
+                    ${log.ip ? `<div class="log-ip">IP: ${log.ip}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // تحديث الإحصائيات
+        function updateStats(stats) {
+            document.getElementById('successCount').textContent = stats.success || 0;
+            document.getElementById('errorCount').textContent = stats.error || 0;
+            document.getElementById('uploadCount').textContent = stats.upload || 0;
+            document.getElementById('downloadCount').textContent = stats.download || 0;
+        }
+
+        // تحديث الترقيم
+        function updatePagination(pagination) {
+            currentPage = pagination.current_page;
+            totalPages = pagination.total_pages;
+
+            document.getElementById('pageInfo').textContent = `الصفحة ${currentPage} من ${totalPages}`;
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
+        }
+
+        // تغيير الصفحة
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                loadLogs(newPage, currentFilters);
+            }
+        }
+
+        // تطبيق الفلاتر
+        function applyFilters() {
+            const filters = {
+                action: document.getElementById('actionFilter').value,
+                status: document.getElementById('statusFilter').value,
+                date: document.getElementById('dateFilter').value
+            };
+
+            currentFilters = filters;
+            loadLogs(1, filters);
+        }
+
+        // مسح الفلاتر
+        function clearFilters() {
+            document.getElementById('actionFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+
+            currentFilters = {};
+            loadLogs(1);
+        }
+
+        // دوال مساعدة
+        function getActionText(action) {
+            const actions = {
+                'register': 'إنشاء حساب',
+                'login': 'تسجيل دخول',
+                'logout': 'تسجيل خروج',
+                'upload': 'رفع ملف',
+                'download': 'تحميل ملف',
+                'delete': 'حذف ملف'
+            };
+            return actions[action] || action;
+        }
+
+        function getStatusText(status) {
+            const statuses = {
+                'success': 'نجح',
+                'error': 'فشل',
+                'warning': 'تحذير'
+            };
+            return statuses[status] || status;
+        }
+
+        function getActionIcon(action) {
+            const icons = {
+                'register': '<i class="fas fa-edit"></i>',
+                'login': '<i class="fas fa-sign-in-alt"></i>',
+                'logout': '<i class="fas fa-sign-out-alt"></i>',
+                'upload': '<i class="fas fa-upload"></i>',
+                'download': '<i class="fas fa-download"></i>',
+                'delete': '<i class="fas fa-trash"></i>'
+            };
+            return icons[action] || '<i class="fas fa-file"></i>';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'success': '<i class="fas fa-check"></i>',
+                'error': '<i class="fas fa-times"></i>',
+                'warning': '<i class="fas fa-exclamation-triangle"></i>'
+            };
+            return icons[status] || '<i class="fas fa-info-circle"></i>';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US') + ' ' + date.toLocaleTimeString('en-US');
+        }
+
+        // عرض الرسائل
+        function showAnimatedMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            if (messageDiv) {
+                messageDiv.innerHTML = text;
+                messageDiv.className = `message ${type} message-enhanced fade-in-up`;
+                messageDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                    messageDiv.classList.remove('message-enhanced', 'fade-in-up');
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+
+</html>

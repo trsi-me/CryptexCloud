@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptexCloud - تسجيل الدخول</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>CryptexCloud</h1>
+            <p>نظام النسخ الاحتياطي السحابي الآمن</p>
+        </div>
+
+        <div class="security-warning">
+            <i class="fas fa-exclamation-triangle warning-icon"></i>
+            <div class="warning-content">
+                <h3>تحذير أمني هام</h3>
+                <p>فقدان كلمة المرور يعني فقدان دائم للبيانات. CryptexCloud لا يحتفظ بنسخ مفاتيح مفكوكة ولا يمكنه
+                    استعادة الملفات بدون مفاتيح المستخدم.</p>
+                <p><strong>احفظ نسخة احتياطية من كلمة المرور في مكان آمن!</strong></p>
+            </div>
+        </div>
+
+        <div class="login-form-container">
+            <div class="form-tabs">
+                <button class="tab-button active" onclick="switchTab('login')">تسجيل الدخول</button>
+                <button class="tab-button" onclick="switchTab('register')">إنشاء حساب</button>
+            </div>
+
+            <!-- نموذج تسجيل الدخول -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="loginUsername">اسم المستخدم أو البريد الإلكتروني</label>
+                    <input type="text" id="loginUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">كلمة المرور</label>
+                    <input type="password" id="loginPassword" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">تسجيل الدخول</button>
+            </form>
+
+            <!-- نموذج التسجيل -->
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="registerUsername">اسم المستخدم</label>
+                    <input type="text" id="registerUsername" name="username" required minlength="3">
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">البريد الإلكتروني (اختياري)</label>
+                    <input type="email" id="registerEmail" name="email">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">كلمة المرور</label>
+                    <input type="password" id="registerPassword" name="password" required minlength="8">
+                    <small>يجب أن تكون 8 أحرف على الأقل</small>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">تأكيد كلمة المرور</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">إنشاء الحساب</button>
+            </form>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // تبديل بين نماذج تسجيل الدخول والتسجيل
+        function switchTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const buttons = document.querySelectorAll('.tab-button');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'login') {
+                loginForm.classList.add('active');
+                registerForm.classList.remove('active');
+            } else {
+                loginForm.classList.remove('active');
+                registerForm.classList.add('active');
+            }
+        }
+
+        // معالج تسجيل الدخول
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            showMessage('<span class="icon-loading"></span> جاري تسجيل الدخول...', 'info');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('<span class="icon-success"></span> تم تسجيل الدخول بنجاح', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    showMessage('<span class="icon-error"></span> ' + (result.error || 'فشل في تسجيل الدخول'), 'error');
+                }
+            } catch (error) {
+                showMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+            }
+        });
+
+        // معالج التسجيل
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            // التحقق من تطابق كلمات المرور
+            if (data.password !== data.confirmPassword) {
+                showMessage('<span class="icon-warning"></span> كلمات المرور غير متطابقة', 'error');
+                return;
+            }
+
+            showMessage('<span class="icon-loading"></span> جاري إنشاء الحساب...', 'info');
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: data.username,
+                        email: data.email,
+                        password: data.password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('<span class="icon-success"></span> تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول', 'success');
+                    setTimeout(() => {
+                        switchTab('login');
+                        document.getElementById('loginUsername').value = data.username;
+                    }, 2000);
+                } else {
+                    showMessage('<span class="icon-error"></span> ' + (result.error || 'فشل في إنشاء الحساب'), 'error');
+                }
+            } catch (error) {
+                showMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+            }
+        });
+
+        // عرض الرسائل
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>

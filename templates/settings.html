@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptexCloud - الإعدادات</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="dashboard-page">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>CryptexCloud</h2>
+            <p>نظام النسخ الاحتياطي الآمن</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link">
+                <i class="fas fa-chart-pie nav-icon"></i>
+                لوحة التحكم
+            </a>
+            <a href="/profile" class="nav-link">
+                <i class="fas fa-user nav-icon"></i>
+                الملف الشخصي
+            </a>
+            <a href="/settings" class="nav-link active">
+                <i class="fas fa-cog nav-icon"></i>
+                الإعدادات
+            </a>
+            <a href="/logs" class="nav-link">
+                <i class="fas fa-list nav-icon"></i>
+                السجل
+            </a>
+            <a href="/logout" class="nav-link logout-link">
+                <i class="fas fa-sign-out-alt nav-icon"></i>
+                تسجيل الخروج
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="security-reminder">
+                <i class="fas fa-shield-alt reminder-icon"></i>
+                <p>احفظ كلمة المرور في مكان آمن</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="main-header">
+            <h1><i class="fas fa-cog"></i> الإعدادات</h1>
+            <div class="user-info">
+                <span>مرحباً، <strong id="username">{{ session.username }}</strong></span>
+            </div>
+        </header>
+
+        <div class="content-section active">
+            <div class="settings-section">
+                <div class="settings-card">
+                    <h3><span class="icon-encrypt"></span> إعدادات التشفير</h3>
+                    <div class="setting-item">
+                        <label for="pbkdf2Iterations">عدد تكرارات PBKDF2:</label>
+                        <select id="pbkdf2Iterations">
+                            <option value="100000">100,000 (سريع)</option>
+                            <option value="200000" selected>200,000 (افتراضي)</option>
+                            <option value="500000">500,000 (آمن)</option>
+                            <option value="1000000">1,000,000 (آمن جداً)</option>
+                        </select>
+                        <small>كلما زاد العدد، زاد الأمان ولكن بطء التشفير</small>
+                    </div>
+                    <div class="setting-item">
+                        <label for="algorithm">خوارزمية التشفير:</label>
+                        <select id="algorithm">
+                            <option value="AES-256-GCM" selected>AES-256-GCM (افتراضي)</option>
+                            <option value="AES-128-GCM">AES-128-GCM (أسرع)</option>
+                        </select>
+                        <small>خوارزمية التشفير المستخدمة للملفات</small>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><span class="icon-upload"></span> إعدادات الرفع</h3>
+                    <div class="setting-item">
+                        <label for="maxFileSize">الحد الأقصى لحجم الملف (MB):</label>
+                        <select id="maxFileSize">
+                            <option value="10">10 MB</option>
+                            <option value="50">50 MB</option>
+                            <option value="100" selected>100 MB (افتراضي)</option>
+                            <option value="500">500 MB</option>
+                            <option value="1000">1 GB</option>
+                        </select>
+                        <small>الحد الأقصى لحجم الملف الواحد</small>
+                    </div>
+                    <div class="setting-item">
+                        <label for="autoDelete">حذف تلقائي للملفات القديمة:</label>
+                        <select id="autoDelete">
+                            <option value="never" selected>لا تحذف أبداً</option>
+                            <option value="30">بعد 30 يوم</option>
+                            <option value="90">بعد 90 يوم</option>
+                            <option value="365">بعد سنة</option>
+                        </select>
+                        <small>حذف الملفات تلقائياً بعد فترة معينة</small>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><span class="icon-security"></span> إعدادات الأمان</h3>
+                    <div class="setting-item">
+                        <label for="sessionTimeout">مهلة انتهاء الجلسة (دقيقة):</label>
+                        <select id="sessionTimeout">
+                            <option value="30">30 دقيقة</option>
+                            <option value="60">ساعة واحدة</option>
+                            <option value="120" selected>ساعتان (افتراضي)</option>
+                            <option value="480">8 ساعات</option>
+                            <option value="1440">24 ساعة</option>
+                        </select>
+                        <small>مدة انتهاء الجلسة عند عدم النشاط</small>
+                    </div>
+                    <div class="setting-item">
+                        <label for="twoFactor">المصادقة الثنائية:</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="twoFactor">
+                            <label for="twoFactor" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <small>تفعيل المصادقة الثنائية لزيادة الأمان</small>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><span class="icon-cloud"></span> إعدادات التخزين</h3>
+                    <div class="setting-item">
+                        <label for="storageBackend">نوع التخزين:</label>
+                        <select id="storageBackend">
+                            <option value="local" selected>محلي (افتراضي)</option>
+                            <option value="s3">Amazon S3</option>
+                        </select>
+                        <small>مكان تخزين الملفات المشفرة</small>
+                    </div>
+                    <div class="setting-item hidden" id="s3Settings">
+                        <label for="s3Bucket">اسم الحاوية S3:</label>
+                        <input type="text" id="s3Bucket" placeholder="my-bucket-name">
+                        <small>اسم الحاوية في Amazon S3</small>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><i class="fas fa-bell"></i> إعدادات الإشعارات</h3>
+                    <div class="setting-item">
+                        <label for="emailNotifications">إشعارات البريد الإلكتروني:</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="emailNotifications">
+                            <label for="emailNotifications" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <small>إرسال إشعارات عبر البريد الإلكتروني</small>
+                    </div>
+                    <div class="setting-item">
+                        <label for="notificationTypes">أنواع الإشعارات:</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="notifyUpload" checked> رفع ملفات</label>
+                            <label><input type="checkbox" id="notifyDownload" checked> تحميل ملفات</label>
+                            <label><input type="checkbox" id="notifyDelete"> حذف ملفات</label>
+                            <label><input type="checkbox" id="notifyLogin"> تسجيل دخول</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> حفظ الإعدادات
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetSettings()">
+                        <i class="fas fa-refresh"></i> إعادة تعيين
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- رسائل التنبيه -->
+    <div id="message" class="message"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // تحميل الإعدادات
+        document.addEventListener('DOMContentLoaded', function () {
+            loadSettings();
+        });
+
+        // تحميل الإعدادات
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const result = await response.json();
+
+                if (result.success) {
+                    const settings = result.settings;
+
+                    // تطبيق الإعدادات على النماذج
+                    document.getElementById('pbkdf2Iterations').value = settings.pbkdf2_iterations || 200000;
+                    document.getElementById('algorithm').value = settings.algorithm || 'AES-256-GCM';
+                    document.getElementById('maxFileSize').value = settings.max_file_size || 100;
+                    document.getElementById('autoDelete').value = settings.auto_delete || 'never';
+                    document.getElementById('sessionTimeout').value = settings.session_timeout || 120;
+                    document.getElementById('twoFactor').checked = settings.two_factor || false;
+                    document.getElementById('storageBackend').value = settings.storage_backend || 'local';
+                    document.getElementById('s3Bucket').value = settings.s3_bucket || '';
+                    document.getElementById('emailNotifications').checked = settings.email_notifications || false;
+                    document.getElementById('notifyUpload').checked = settings.notify_upload || true;
+                    document.getElementById('notifyDownload').checked = settings.notify_download || true;
+                    document.getElementById('notifyDelete').checked = settings.notify_delete || false;
+                    document.getElementById('notifyLogin').checked = settings.notify_login || false;
+
+                    // إظهار/إخفاء إعدادات S3
+                    toggleS3Settings();
+                }
+            } catch (error) {
+                showAnimatedMessage('<span class="icon-error"></span> فشل في تحميل الإعدادات', 'error');
+            }
+        }
+
+        // حفظ الإعدادات
+        async function saveSettings() {
+            try {
+                showAnimatedMessage('<span class="icon-loading"></span> جاري حفظ الإعدادات...', 'info');
+
+                const settings = {
+                    pbkdf2_iterations: parseInt(document.getElementById('pbkdf2Iterations').value),
+                    algorithm: document.getElementById('algorithm').value,
+                    max_file_size: parseInt(document.getElementById('maxFileSize').value),
+                    auto_delete: document.getElementById('autoDelete').value,
+                    session_timeout: parseInt(document.getElementById('sessionTimeout').value),
+                    two_factor: document.getElementById('twoFactor').checked,
+                    storage_backend: document.getElementById('storageBackend').value,
+                    s3_bucket: document.getElementById('s3Bucket').value,
+                    email_notifications: document.getElementById('emailNotifications').checked,
+                    notify_upload: document.getElementById('notifyUpload').checked,
+                    notify_download: document.getElementById('notifyDownload').checked,
+                    notify_delete: document.getElementById('notifyDelete').checked,
+                    notify_login: document.getElementById('notifyLogin').checked
+                };
+
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAnimatedMessage('<span class="icon-success"></span> تم حفظ الإعدادات بنجاح', 'success');
+                } else {
+                    showAnimatedMessage('<span class="icon-error"></span> ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+            }
+        }
+
+        // إعادة تعيين الإعدادات
+        function resetSettings() {
+            if (confirm('هل تريد إعادة تعيين جميع الإعدادات إلى القيم الافتراضية؟')) {
+                document.getElementById('pbkdf2Iterations').value = 200000;
+                document.getElementById('algorithm').value = 'AES-256-GCM';
+                document.getElementById('maxFileSize').value = 100;
+                document.getElementById('autoDelete').value = 'never';
+                document.getElementById('sessionTimeout').value = 120;
+                document.getElementById('twoFactor').checked = false;
+                document.getElementById('storageBackend').value = 'local';
+                document.getElementById('s3Bucket').value = '';
+                document.getElementById('emailNotifications').checked = false;
+                document.getElementById('notifyUpload').checked = true;
+                document.getElementById('notifyDownload').checked = true;
+                document.getElementById('notifyDelete').checked = false;
+                document.getElementById('notifyLogin').checked = false;
+
+                toggleS3Settings();
+                showAnimatedMessage('<span class="icon-success"></span> تم إعادة تعيين الإعدادات', 'success');
+            }
+        }
+
+        // تبديل إعدادات S3
+        function toggleS3Settings() {
+            const storageBackend = document.getElementById('storageBackend').value;
+            const s3Settings = document.getElementById('s3Settings');
+
+            if (storageBackend === 's3') {
+                s3Settings.classList.remove('hidden');
+            } else {
+                s3Settings.classList.add('hidden');
+            }
+        }
+
+        // إضافة مستمع لتغيير نوع التخزين
+        document.getElementById('storageBackend').addEventListener('change', toggleS3Settings);
+
+        // عرض الرسائل
+        function showAnimatedMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            if (messageDiv) {
+                messageDiv.innerHTML = text;
+                messageDiv.className = `message ${type} message-enhanced fade-in-up`;
+                messageDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                    messageDiv.classList.remove('message-enhanced', 'fade-in-up');
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptexCloud - الملف الشخصي</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="dashboard-page">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>CryptexCloud</h2>
+            <p>نظام النسخ الاحتياطي الآمن</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link">
+                <i class="fas fa-chart-pie nav-icon"></i>
+                لوحة التحكم
+            </a>
+            <a href="/profile" class="nav-link active">
+                <i class="fas fa-user nav-icon"></i>
+                الملف الشخصي
+            </a>
+            <a href="/settings" class="nav-link">
+                <i class="fas fa-cog nav-icon"></i>
+                الإعدادات
+            </a>
+            <a href="/logs" class="nav-link">
+                <i class="fas fa-list nav-icon"></i>
+                السجل
+            </a>
+            <a href="/logout" class="nav-link logout-link">
+                <i class="fas fa-sign-out-alt nav-icon"></i>
+                تسجيل الخروج
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="security-reminder">
+                <i class="fas fa-shield-alt reminder-icon"></i>
+                <p>احفظ كلمة المرور في مكان آمن</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="main-header">
+            <h1><span class="icon-profile"></span> الملف الشخصي</h1>
+            <div class="user-info">
+                <span>مرحباً، <strong id="username">{{ session.username }}</strong></span>
+            </div>
+        </header>
+
+        <div class="content-section active">
+            <div class="profile-section">
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <span class="avatar-icon icon-user"></span>
+                        </div>
+                        <div class="profile-info">
+                            <h2 id="profileUsername">{{ session.username }}</h2>
+                            <p class="profile-email" id="profileEmail">البريد الإلكتروني غير محدد</p>
+                            <p class="profile-join-date">عضو منذ: <span id="joinDate">غير محدد</span></p>
+                        </div>
+                    </div>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-icon icon-files"></div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="totalFiles">0</div>
+                                <div class="stat-label">إجمالي الملفات</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon icon-size"></div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="totalSize">0 بايت</div>
+                                <div class="stat-label">إجمالي الحجم</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon icon-encrypt"></div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="encryptionLevel">AES-256</div>
+                                <div class="stat-label">مستوى التشفير</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <div class="action-card">
+                        <h3><span class="icon-password"></span> تغيير كلمة المرور</h3>
+                        <form id="changePasswordForm">
+                            <div class="form-group">
+                                <label for="currentPassword">كلمة المرور الحالية</label>
+                                <input type="password" id="currentPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">كلمة المرور الجديدة</label>
+                                <input type="password" id="newPassword" required minlength="8">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmNewPassword">تأكيد كلمة المرور الجديدة</label>
+                                <input type="password" id="confirmNewPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">تغيير كلمة المرور</button>
+                        </form>
+                    </div>
+
+                    <div class="action-card">
+                        <h3><span class="icon-email"></span> تحديث البريد الإلكتروني</h3>
+                        <form id="updateEmailForm">
+                            <div class="form-group">
+                                <label for="newEmail">البريد الإلكتروني الجديد</label>
+                                <input type="email" id="newEmail" placeholder="example@domain.com">
+                            </div>
+                            <button type="submit" class="btn btn-secondary">تحديث البريد</button>
+                        </form>
+                    </div>
+
+                    <div class="action-card danger-card">
+                        <h3><span class="icon-warning"></span> إجراءات خطيرة</h3>
+                        <div class="danger-actions">
+                            <button class="btn btn-danger" onclick="exportData()"><span class="icon-export"></span>
+                                تصدير البيانات</button>
+                            <button class="btn btn-danger" onclick="deleteAccount()"><span class="icon-delete"></span>
+                                حذف الحساب</button>
+                        </div>
+                        <p class="danger-warning"><span class="icon-warning"></span> هذه الإجراءات لا يمكن التراجع عنها
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة حوار التأكيد -->
+    <div id="confirmDialog" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="confirmTitle">تأكيد العملية</h3>
+            <p id="confirmMessage">هل أنت متأكد من تنفيذ هذه العملية؟</p>
+            <div class="modal-actions">
+                <button class="btn btn-danger" id="confirmYes">نعم</button>
+                <button class="btn btn-secondary" id="confirmNo">لا</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- رسائل التنبيه -->
+    <div id="message" class="message"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // تحميل بيانات الملف الشخصي
+        document.addEventListener('DOMContentLoaded', function () {
+            loadProfileData();
+        });
+
+        // تحميل بيانات الملف الشخصي
+        async function loadProfileData() {
+            try {
+                const response = await fetch('/api/profile');
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('profileEmail').textContent = result.user.email || 'غير محدد';
+                    document.getElementById('joinDate').textContent = formatDate(result.user.created_at);
+                    document.getElementById('totalFiles').textContent = result.stats.total_files;
+                    document.getElementById('totalSize').textContent = formatFileSize(result.stats.total_size);
+                }
+            } catch (error) {
+                showAnimatedMessage('<span class="icon-error"></span> فشل في تحميل بيانات الملف الشخصي', 'error');
+            }
+        }
+
+        // تغيير كلمة المرور
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmNewPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showAnimatedMessage('<span class="icon-warning"></span> كلمات المرور غير متطابقة', 'error');
+                return;
+            }
+
+            try {
+                showAnimatedMessage('<span class="icon-loading"></span> جاري تغيير كلمة المرور...', 'info');
+
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAnimatedMessage('<span class="icon-success"></span> تم تغيير كلمة المرور بنجاح', 'success');
+                    document.getElementById('changePasswordForm').reset();
+                } else {
+                    showAnimatedMessage('<span class="icon-error"></span> ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+            }
+        });
+
+        // تحديث البريد الإلكتروني
+        document.getElementById('updateEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const newEmail = document.getElementById('newEmail').value;
+
+            try {
+                showAnimatedMessage('<span class="icon-loading"></span> جاري تحديث البريد الإلكتروني...', 'info');
+
+                const response = await fetch('/api/update-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: newEmail
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAnimatedMessage('<span class="icon-success"></span> تم تحديث البريد الإلكتروني بنجاح', 'success');
+                    document.getElementById('profileEmail').textContent = newEmail;
+                    document.getElementById('updateEmailForm').reset();
+                } else {
+                    showAnimatedMessage('<span class="icon-error"></span> ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+            }
+        });
+
+        // تصدير البيانات
+        async function exportData() {
+            showConfirmDialog(
+                '<span class="icon-export"></span> تصدير البيانات',
+                'هل تريد تصدير جميع بياناتك؟ سيتم تحميل ملف يحتوي على معلومات حسابك.',
+                async () => {
+                    try {
+                        showAnimatedMessage('<span class="icon-loading"></span> جاري تصدير البيانات...', 'info');
+
+                        const response = await fetch('/api/export-data');
+                        const result = await response.json();
+
+                        if (result.success) {
+                            // تحميل الملف
+                            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `cryptexcloud-data-${new Date().toISOString().split('T')[0]}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+
+                            showAnimatedMessage('<span class="icon-success"></span> تم تصدير البيانات بنجاح', 'success');
+                        } else {
+                            showAnimatedMessage('<span class="icon-error"></span> ' + result.error, 'error');
+                        }
+                    } catch (error) {
+                        showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+                    }
+                }
+            );
+        }
+
+        // حذف الحساب
+        function deleteAccount() {
+            showConfirmDialog(
+                '<span class="icon-delete"></span> حذف الحساب',
+                'هل أنت متأكد من حذف حسابك؟ سيتم حذف جميع ملفاتك وبياناتك نهائياً ولا يمكن التراجع عن هذه العملية.',
+                async () => {
+                    try {
+                        showAnimatedMessage('<span class="icon-loading"></span> جاري حذف الحساب...', 'info');
+
+                        const response = await fetch('/api/delete-account', {
+                            method: 'DELETE'
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showAnimatedMessage('<span class="icon-success"></span> تم حذف الحساب بنجاح', 'success');
+                            setTimeout(() => {
+                                window.location.href = '/login';
+                            }, 2000);
+                        } else {
+                            showAnimatedMessage('<span class="icon-error"></span> ' + result.error, 'error');
+                        }
+                    } catch (error) {
+                        showAnimatedMessage('<span class="icon-error"></span> حدث خطأ في الاتصال', 'error');
+                    }
+                }
+            );
+        }
+
+        // نافذة حوار التأكيد
+        function showConfirmDialog(title, message, onConfirm) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmDialog').classList.remove('hidden');
+
+            document.getElementById('confirmYes').onclick = () => {
+                document.getElementById('confirmDialog').classList.add('hidden');
+                onConfirm();
+            };
+
+            document.getElementById('confirmNo').onclick = () => {
+                document.getElementById('confirmDialog').classList.add('hidden');
+            };
+        }
+
+        // عرض الرسائل
+        function showAnimatedMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            if (messageDiv) {
+                messageDiv.textContent = text;
+                messageDiv.className = `message ${type} message-enhanced fade-in-up`;
+                messageDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                    messageDiv.classList.remove('message-enhanced', 'fade-in-up');
+                }, 5000);
+            }
+        }
+
+        // دوال مساعدة
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ar-SA') + ' ' + date.toLocaleTimeString('ar-SA');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 بايت';
+            const k = 1024;
+            const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+
+</html>
