@@ -11,7 +11,7 @@ class Config:
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
     FLASK_DEBUG = os.getenv('FLASK_DEBUG', '1') == '1'
     FLASK_APP = os.getenv('FLASK_APP', 'app.py')
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    SECRET_KEY = os.getenv('SECRET_KEY', '')
     
     # إعدادات التخزين
     STORAGE_BACKEND = os.getenv('STORAGE_BACKEND', 'local')
